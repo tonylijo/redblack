@@ -1,12 +1,10 @@
 #include <stdio.h>
-
+typedef enum{RED,BLACK} rb_colour_t;
 /*
  * Data structure for a node in red black tree
  */
 struct rb_node_t {
-    enum {red,black} colour;
-    void *key;
-    void *data;
+    rb_colour_t colour;
     struct rb_node_t *left;
     struct rb_node_t *right;
     struct rb_node_t *parent;
@@ -18,6 +16,7 @@ struct rb_node_t {
 struct rb_t {
     struct rb_node_t *root;
     int (*com_fn)(struct rb_node_t *node1,struct rb_node_t *node2);
+    void (*free)(struct rb_node_t *node);
     uint32_t nelements;
 };
 
@@ -168,11 +167,31 @@ void tree_insert(struct rb_t *tree,struct rb_node_t *node)
     node->parent = NULL;
     node->left  = NULL;
     node->right = NULL;
-    node->colour = BLACK;
+    node->colour = RED;
     return;
 }
 
 /*
- * Insert Fix up
+ * Insert Fixup 
  */
-void insert_fixup(
+void insert_fixup(struct rb_t *tree,struct rb_node_t *node)
+{
+    while(node->parent->colour == RED) {
+        if(node->parent == node->parent->parent->left) {
+            struct rb_node_t *y = uncle(node);
+            if(y->colour == RED) {
+                node->parent->colour = BLACK;
+                y->colour = BLACK;
+                node->parent->parent->colour = RED;
+                node = node->parent->parent;
+            } else if(node == node->parent->right) {
+               node = node->parent;
+               left_rotate(tree,node);
+               node->parent->colour = BLACK;
+               node->parent->parent->colour = RED;
+               right_rotate(tree,node->parent->parent);
+            }
+
+        }    
+    }
+}
