@@ -1,24 +1,4 @@
-#include <stdio.h>
-typedef enum{RED,BLACK} rb_colour_t;
-/*
- * Data structure for a node in red black tree
- */
-struct rb_node_t {
-    rb_colour_t colour;
-    struct rb_node_t *left;
-    struct rb_node_t *right;
-    struct rb_node_t *parent;
-};
-
-/*
- * Root element datastructure
- */
-struct rb_t {
-    struct rb_node_t *root;
-    int (*com_fn)(struct rb_node_t *node1,struct rb_node_t *node2);
-    void (*free)(struct rb_node_t *node);
-    uint32_t nelements;
-};
+#include "rb.h"
 
 /*
  *  Left Rotate operation
@@ -31,7 +11,7 @@ struct rb_t {
  *           b   c         a   b
  *
  */
-void left_rotate(struct rb_t *tree,struct rb_node_t *pivot)
+static void left_rotate(struct rb_t *tree,struct rb_node_t *pivot)
 {
     struct rb_node_t *x = pivot;
     struct rb_node_t *y = x->right;
@@ -60,7 +40,7 @@ void left_rotate(struct rb_t *tree,struct rb_node_t *pivot)
  *      / \              / \
  *     a   b            b   c
  */
-void right_rotate(struct rb_t *tree,struct rb_node_t *pivote)
+static void right_rotate(struct rb_t *tree,struct rb_node_t *pivote)
 {
     struct rb_node_t *x = pivote;
     struct rb_node_t *y = pivote->parent;
@@ -92,7 +72,7 @@ void right_rotate(struct rb_t *tree,struct rb_node_t *pivote)
  * Find Grand parent of a node 
  * node : relative to this node
  */
-struct rb_node_t *grand_parent(struct rb_node_t *node)
+static struct rb_node_t *grand_parent(struct rb_node_t *node)
 {
     if((node != NULL) && (node->parent != NULL)) {
         return node->parent->parent;
@@ -104,7 +84,7 @@ struct rb_node_t *grand_parent(struct rb_node_t *node)
  * Find Uncle of a node
  * node: relative to this node
  */
-struct rb_node_t *uncle(struct rb_node_t *node)
+static struct rb_node_t *uncle(struct rb_node_t *node)
 {
     struct rb_node_t *g = grand_parent(node);
     if(g == NULL) return NULL;
@@ -121,7 +101,7 @@ struct rb_node_t *uncle(struct rb_node_t *node)
  *             / \
  *          a<X  b>X
  */
-void tree_insert(struct rb_t *tree,struct rb_node_t *node)
+static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
 {
     struct rb_node_t *root = tree->root;
     struct rb_node_t *sub_root = root;
@@ -158,7 +138,7 @@ void tree_insert(struct rb_t *tree,struct rb_node_t *node)
             node->right = sub_root->right;
             node->parent = sub_root->parent;
             node->colour = RED;
-            free(sub_root);
+            tree->free(sub_root);
             return;
         }
     }
@@ -173,9 +153,11 @@ void tree_insert(struct rb_t *tree,struct rb_node_t *node)
 
 /*
  * Insert Fixup 
+ *
  */
-void insert_fixup(struct rb_t *tree,struct rb_node_t *node)
+void rb_insert(struct rb_t *tree,struct rb_node_t *node)
 {
+    tree_insert(tree,node); 
     while(node->parent->colour == RED) {
         if(node->parent == node->parent->parent->left) {
             struct rb_node_t *y = uncle(node);
@@ -191,7 +173,37 @@ void insert_fixup(struct rb_t *tree,struct rb_node_t *node)
                node->parent->parent->colour = RED;
                right_rotate(tree,node->parent->parent);
             }
+        } else {
+            struct rb_node_t *y = uncle(node);
+            if(y->colour == RED) {
+                node->parent->colour = BLACK;
+                y->colour = BLACK;
+                node->parent->parent->colour = RED;
+                node = node->parent->parent;
+            } else if(node == node->parent->left) {
+                node = node->parent;
+                right_rotate(tree,node);
+                node->parent->colour = BLACK;  
+                node->parent->parent->colour = RED;
+                left_rotate(tree,node->parent->parent);
+            }
+        }
+    }    
+}
 
-        }    
+/*
+ * Inorder
+ */
+void rb_inorder(struct rb_t *tree,struct rb_node_t *node)
+{
+    if(node) {
+        inorder(tree,node->left);
+        printf("node=");
+        tree->print(node);
+        printf("node->left");
+        tree->print(node->left);
+        printf("node->right");
+        tree->print(node->right);
+        inorder(tree,node->right);
     }
 }
