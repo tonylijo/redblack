@@ -162,7 +162,7 @@ void rb_insert(struct rb_t *tree,struct rb_node_t *node)
     tree_insert(tree,node); 
     printf("root ");
     tree->print(tree->root);
-    while((node->parent) && node->parent->colour == RED) {
+    while((node->parent) && (node->parent->colour == RED)) {
         if(node->parent == node->parent->parent->left) {
             struct rb_node_t *y = uncle(node);
             if(y && (y->colour == RED)) {
@@ -197,6 +197,7 @@ void rb_insert(struct rb_t *tree,struct rb_node_t *node)
             }
         }
     }    
+    tree->root->colour = BLACK;
 }
 
 /*
