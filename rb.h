@@ -26,4 +26,5 @@ struct rb_t {
 
 void rb_insert(struct rb_t *tree,struct rb_node_t *node);
 void rb_inorder(struct rb_t *tree,struct rb_node_t *node);
+void rb_preorder(struct rb_t *tree,struct rb_node_t *node);
 #endif

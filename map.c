@@ -6,66 +6,69 @@ struct map_node {
     struct rb_node_t rbnode;
 };
 
-typedef int  (*map_cmp_t)(void *,void *);
-typedef void (*map_free_t)(void *,void *);
-typedef void (*map_print_t)(void *,void *);
+typedef struct rb_t map_t;
 
-struct map_t {
-    struct map_node *root;
-    int (*compare)(void *key1,void *key2);
-    void(*free)(void *key,void *value);
-    void(*print)(void *key,void *value);
-};
-
-static int rb_compare(struct rb_node_t *node1,struct rb_node_t *node2,void *data)
+static int map_compare(struct rb_node_t *node1,struct rb_node_t *node2)
 {
-    struct map *map_node1 = (struct map_node *)((char *)node1 - ((size_t)&((struct map *)0)->rbnode));
-    struct map *map_node2 = (struct map_node *)((char *)node2 - ((size_t)&((struct map *)0)->rbnode));
-    return ((struct map_t *)data)->compare((char *)map_node1->key,(char *)map_node2->key);
+    struct map_node *map_node1 = (struct map_node *)((char *)node1 - ((size_t)&(((struct map_node *)0)->rbnode)));
+    struct map_node *map_node2 = (struct map_node *)((char *)node2 - ((size_t)&(((struct map_node *)0)->rbnode)));
+    printf("node address is %u %u\n",map_node1,map_node2);
+    return strncmp((char *)(map_node1->key),(char *)(map_node2->key),100);
 }
 
-static void rb_free(struct rb_node_t *node,void *data)
+static void map_free(struct rb_node_t *node)
 {
-    struct map_node *map_node = (struct map *)((char *)node -((size_t)&((struct map *)0)->rbnode));
-    if(((struct map_t *)data)->free) {
-        ((struct map_t *)data)->free(map_node->key,map_node->value);
-    }
+    struct map_node *map_node = (struct map_node *)((char *)node - ((size_t)&(((struct map_node *)0)->rbnode)));
     free(map_node);
 }
 
-static void print(struct rb_node_t *node,void *data)
+static void map_print(struct rb_node_t *node)
 {
-    struct map_node *map_node = (struct map_node *)((char *)node -((size_t)&((struct map *)0)->rbnode));
-    ((struct map_t *)data)->print(map_node->key,map_node->value);
+    struct map_node *map_node = (struct map_node *)((char *)node - ((size_t) & (((struct map_node *)0)->rbnode)));
+    printf("Key=%s,Value=%s\n",(char *)map_node->key,(char *)map_node->value);
 }
 
-static inline struct map_node *create_node(void)
+map_t *map_init()
 {
-    struct map_node *node = (struct map_node *) malloc(sizeof(struct map_node));
-    return node;
+    map_t *map_root  = (map_t *)malloc(sizeof(map_t));
+    map_root->root   = NULL;
+    map_root->com_fn = map_compare;
+    map_root->free   = map_free;
+    map_root->print  = map_print;
 }
 
-struct map_t *create_map(map_cmp_t cmp_func,map_free_t free_func,map_print_t print_func)
+int map_insert(map_t *map_root,void *key,void *value)
 {
-    struct map_t *map = (struct map_t *) malloc(sizeof(struct map_t));
-    if(map) {
-        map->root    = NULL;
-        map->compare = cmp_func;
-        map->free    = free_func;
-        map->print   = print_func;
-    }
-    return map;
+    struct map_node *node = (struct map_node *)malloc(sizeof(struct map_node));
+    printf("node address is %u\n",node);
+    node->key   = key;
+    node->value = value;
+    rb_insert((struct rb_t *)map_root,&(node->rbnode));
+    return 1;
 }
-
 
 int main(int argc,char *argv[])
 {
-
-    struct rb_t redblack = {
-        .root   = NULL,
-        .com_fn = compare,
-        .free   = map_node_free,
-        .print  = print
-    };
-    rb_insert(redblack,)    
+    map_t *map = map_init();
+    printf("Starting insetion \n");
+    map_insert(map, "a"   ,"z");
+    rb_inorder(map,map->root);
+    rb_preorder(map,map->root);
+    printf("**************");
+    map_insert(map, "b","y");
+    rb_inorder(map,map->root);
+    rb_preorder(map,map->root);
+    printf("**************");
+    map_insert(map, "c" ,"x");
+    rb_inorder(map,map->root);
+    rb_preorder(map,map->root);
+    printf("**************");
+    map_insert(map, "d" ,"w");
+    rb_inorder(map,map->root);
+    rb_preorder(map,map->root);
+    printf("**************");
+    map_insert(map, "e"   ,"v");
+    rb_inorder(map,map->root);
+    rb_preorder(map,map->root);
+    printf("**************");
 }

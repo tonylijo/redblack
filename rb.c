@@ -106,7 +106,8 @@ static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
     struct rb_node_t *root = tree->root;
     struct rb_node_t *sub_root = root;
     while(sub_root) {
-        if(tree->com_fn(sub_root,node) > 0) {
+        int comp_value = tree->com_fn(node,sub_root);
+        if(comp_value > 0) {
             if(sub_root->right) {
                 sub_root = sub_root->right;
             } else {
@@ -115,17 +116,18 @@ static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
                 node->left  = NULL;
                 node->parent = sub_root;
                 node->colour = RED;
-                break;
+                return;
             }                
-        } else if(tree->com_fn(sub_root,node) < 0) {
+        } else if(comp_value < 0) {
             if(sub_root->left) {
                 sub_root = sub_root->left;
             } else {
                 sub_root->left = node;
-                node->left = NULL;
-                node->right = NULL;
-                node->parent = sub_root;
-                node->colour = RED;
+                node->left     = NULL;
+                node->right    = NULL;
+                node->parent   = sub_root;
+                node->colour   = RED;
+                return;
             }
         } else {
             //duplicate
@@ -134,8 +136,8 @@ static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
             } else {
                 sub_root->parent->right = node;
             }
-            node->left = sub_root->left;
-            node->right = sub_root->right;
+            node->left   = sub_root->left;
+            node->right  = sub_root->right;
             node->parent = sub_root->parent;
             node->colour = RED;
             tree->free(sub_root);
@@ -143,11 +145,11 @@ static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
         }
     }
     /*Tree is Empty*/
-    tree->root = node;
+    tree->root   = node;
     node->parent = NULL;
-    node->left  = NULL;
-    node->right = NULL;
-    node->colour = RED;
+    node->left   = NULL;
+    node->right  = NULL;
+    node->colour = BLACK;
     return;
 }
 
@@ -158,31 +160,37 @@ static void tree_insert(struct rb_t *tree,struct rb_node_t *node)
 void rb_insert(struct rb_t *tree,struct rb_node_t *node)
 {
     tree_insert(tree,node); 
-    while(node->parent->colour == RED) {
+    printf("root ");
+    tree->print(tree->root);
+    while((node->parent) && node->parent->colour == RED) {
         if(node->parent == node->parent->parent->left) {
             struct rb_node_t *y = uncle(node);
-            if(y->colour == RED) {
+            if(y && (y->colour == RED)) {
                 node->parent->colour = BLACK;
                 y->colour = BLACK;
                 node->parent->parent->colour = RED;
                 node = node->parent->parent;
-            } else if(node == node->parent->right) {
-               node = node->parent;
-               left_rotate(tree,node);
-               node->parent->colour = BLACK;
-               node->parent->parent->colour = RED;
-               right_rotate(tree,node->parent->parent);
+            } else {
+                if(node == node->parent->right) {
+                    node = node->parent;
+                    left_rotate(tree,node);
+                }
+                node->parent->colour = BLACK;
+                node->parent->parent->colour = RED;
+                right_rotate(tree,node->parent->parent);
             }
         } else {
             struct rb_node_t *y = uncle(node);
-            if(y->colour == RED) {
+            if(y && (y->colour == RED)) {
                 node->parent->colour = BLACK;
                 y->colour = BLACK;
                 node->parent->parent->colour = RED;
                 node = node->parent->parent;
-            } else if(node == node->parent->left) {
-                node = node->parent;
-                right_rotate(tree,node);
+            } else {
+                if(node == node->parent->left) {
+                    node = node->parent;
+                    right_rotate(tree,node);
+                }
                 node->parent->colour = BLACK;  
                 node->parent->parent->colour = RED;
                 left_rotate(tree,node->parent->parent);
@@ -196,14 +204,20 @@ void rb_insert(struct rb_t *tree,struct rb_node_t *node)
  */
 void rb_inorder(struct rb_t *tree,struct rb_node_t *node)
 {
+    
     if(node) {
-        inorder(tree,node->left);
-        printf("node=");
+        rb_inorder(tree,node->left);
+        printf("node %d=",node->colour);
         tree->print(node);
-        printf("node->left");
-        tree->print(node->left);
-        printf("node->right");
-        tree->print(node->right);
-        inorder(tree,node->right);
+        rb_inorder(tree,node->right);
+    }
+}
+
+void rb_preorder(struct rb_t *tree,struct rb_node_t *node)
+{
+    if(node) {
+        tree->print(node);
+        rb_preorder(tree,node->left);
+        rb_preorder(tree,node->right);
     }
 }
